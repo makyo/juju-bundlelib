@@ -1,0 +1,233 @@
+- addCharm:
+    args: ['cs:precise/haproxy-28']
+    id: addCharm-0
+- deploy:
+    args:
+    - cs:precise/haproxy-28
+    - haproxy
+    - {}
+    id: addService-1
+    requires: [$addCharm-0]
+- addCharm:
+    args: ['cs:precise/postgresql-62']
+    id: addCharm-2
+- deploy:
+    args:
+    - cs:precise/postgresql-62
+    - postgresql
+    - {}
+    id: addService-3
+    requires: [$addCharm-2]
+- addCharm:
+    args: ['cs:precise/rails-1']
+    id: addCharm-4
+- deploy:
+    args:
+    - cs:precise/rails-1
+    - sample-app
+    - {repo: 'https://github.com/pavelpachkovskij/sample-rails'}
+    id: addService-5
+    requires: [$addCharm-4]
+- addCharm:
+    args: ['cs:precise/logstash-indexer-2']
+    id: addCharm-6
+- deploy:
+    args:
+    - cs:precise/logstash-indexer-2
+    - logstash-indexer
+    - {}
+    id: addService-7
+    requires: [$addCharm-6]
+- addCharm:
+    args: ['cs:precise/nrpe-1']
+    id: addCharm-8
+- deploy:
+    args:
+    - cs:precise/nrpe-1
+    - nrpe
+    - {}
+    id: addService-9
+    requires: [$addCharm-8]
+- addCharm:
+    args: ['cs:precise/kibana-3']
+    id: addCharm-10
+- deploy:
+    args:
+    - cs:precise/kibana-3
+    - kibana
+    - {}
+    id: addService-11
+    requires: [$addCharm-10]
+- addCharm:
+    args: ['cs:precise/logstash-agent-0']
+    id: addCharm-12
+- deploy:
+    args:
+    - cs:precise/logstash-agent-0
+    - logstash-agent
+    - {CustomLogFile: '[''/var/www/rack/current/log/*.log'']', CustomLogType: rack}
+    id: addService-13
+    requires: [$addCharm-12]
+- addCharm:
+    args: ['cs:precise/nagios-5']
+    id: addCharm-14
+- deploy:
+    args:
+    - cs:precise/nagios-5
+    - nagios
+    - {}
+    id: addService-15
+    requires: [$addCharm-14]
+- addCharm:
+    args: ['cs:precise/memcached-12']
+    id: addCharm-16
+- deploy:
+    args:
+    - cs:precise/memcached-12
+    - memcached
+    - {}
+    id: addService-17
+    requires: [$addCharm-16]
+- addCharm:
+    args: ['cs:precise/redis-master-6']
+    id: addCharm-18
+- deploy:
+    args:
+    - cs:precise/redis-master-6
+    - redis-master
+    - {}
+    id: addService-19
+    requires: [$addCharm-18]
+- addMachines:
+    args:
+    - ''
+    - mem=4G arch=amd64 cpu-cores=2
+    - {}
+    id: addMachines-20
+- addRelation:
+    args:
+    - - $addService-3
+      - {name: db}
+    - - $addService-5
+      - {name: postgresql}
+    id: addRelation-21
+    requires: [$addService-3, $addService-5]
+- addRelation:
+    args:
+    - - $addService-1
+      - {name: reverseproxy}
+    - - $addService-5
+      - {name: proxy}
+    id: addRelation-22
+    requires: [$addService-1, $addService-5]
+- addRelation:
+    args:
+    - - $addService-11
+      - {name: rest}
+    - - $addService-7
+      - {name: rest}
+    id: addRelation-23
+    requires: [$addService-11, $addService-7]
+- addRelation:
+    args:
+    - - $addService-13
+      - {name: input}
+    - - $addService-7
+      - {name: input}
+    id: addRelation-24
+    requires: [$addService-13, $addService-7]
+- addRelation:
+    args:
+    - - $addService-13
+      - {name: juju-info}
+    - - $addService-5
+      - {name: juju-info}
+    id: addRelation-25
+    requires: [$addService-13, $addService-5]
+- addRelation:
+    args:
+    - - $addService-5
+      - {name: nagios}
+    - - $addService-15
+      - {name: monitors}
+    id: addRelation-26
+    requires: [$addService-5, $addService-15]
+- addRelation:
+    args:
+    - - $addService-9
+      - {name: monitors}
+    - - $addService-15
+      - {name: monitors}
+    id: addRelation-27
+    requires: [$addService-9, $addService-15]
+- addRelation:
+    args:
+    - - $addService-5
+      - {name: nrpe}
+    - - $addService-9
+      - {name: local-monitors}
+    id: addRelation-28
+    requires: [$addService-5, $addService-9]
+- addRelation:
+    args:
+    - - $addService-17
+      - {name: cache}
+    - - $addService-5
+      - {name: memcached}
+    id: addRelation-29
+    requires: [$addService-17, $addService-5]
+- addRelation:
+    args:
+    - - $addService-19
+      - {name: redis-master}
+    - - $addService-5
+      - {name: redis}
+    id: addRelation-30
+    requires: [$addService-19, $addService-5]
+- addUnit:
+    args: [$addService-1, 1, null]
+    id: addUnit-31
+    requires: [$addService-1]
+- addUnit:
+    args: [$addService-3, 1, null]
+    id: addUnit-32
+    requires: [$addService-3]
+- addUnit:
+    args: [$addService-5, 1, null]
+    id: addUnit-33
+    requires: [$addService-5]
+- addMachines:
+    args:
+    - ''
+    - {}
+    - {containerType: lxc, parentId: $addMachines-20}
+    id: addMachines-39
+    requires: [$addMachines-20]
+- addUnit:
+    args: [$addService-7, 1, $addMachines-39]
+    id: addUnit-34
+    requires: [$addService-7, $addMachines-39]
+- addMachines:
+    args:
+    - ''
+    - {}
+    - {containerType: lxc, parentId: $addMachines-20}
+    id: addMachines-40
+    requires: [$addMachines-20]
+- addUnit:
+    args: [$addService-11, 1, $addMachines-40]
+    id: addUnit-35
+    requires: [$addService-11, $addMachines-40]
+- addUnit:
+    args: [$addService-15, 1, null]
+    id: addUnit-36
+    requires: [$addService-15]
+- addUnit:
+    args: [$addService-17, 1, null]
+    id: addUnit-37
+    requires: [$addService-17]
+- addUnit:
+    args: [$addService-19, 1, null]
+    id: addUnit-38
+    requires: [$addService-19]
+

@@ -1,0 +1,95 @@
+services:
+  haproxy:
+    charm: cs:precise/haproxy-28
+    num_units: 1
+    annotations:
+      gui-x: "1909.899658203125"
+      gui-y: "-351.7314758300781"
+  kibana:
+    charm: cs:precise/kibana-3
+    num_units: 1
+    annotations:
+      gui-x: "2144.118408203125"
+      gui-y: "837.6808471679688"
+    to:
+      - "lxc:0"
+  logstash-agent:
+    charm: cs:precise/logstash-agent-0
+    num_units: 0
+    options:
+      CustomLogFile: '[''/var/www/rack/current/log/*.log'']'
+      CustomLogType: rack
+    annotations:
+      gui-x: "2146.149658203125"
+      gui-y: "292.52708435058594"
+  logstash-indexer:
+    charm: cs:precise/logstash-indexer-2
+    num_units: 1
+    annotations:
+      gui-x: "2146.64453125"
+      gui-y: "556.3760681152344"
+    to:
+      - "lxc:0"
+  memcached:
+    charm: cs:precise/memcached-12
+    num_units: 1
+    annotations:
+      gui-x: "1617.1571044921875"
+      gui-y: "-1.0110244750976562"
+  nagios:
+    charm: cs:precise/nagios-5
+    num_units: 1
+    annotations:
+      gui-x: "2670.5478515625"
+      gui-y: "2.0001220703125"
+  nrpe:
+    charm: cs:precise/nrpe-1
+    num_units: 0
+    annotations:
+      gui-x: "2670.84814453125"
+      gui-y: "315.0707092285156"
+  postgresql:
+    charm: cs:precise/postgresql-62
+    num_units: 1
+    annotations:
+      gui-x: "1916.6300048828125"
+      gui-y: "389.1839294433594"
+  redis-master:
+    charm: cs:precise/redis-master-6
+    num_units: 1
+    annotations:
+      gui-x: "1651.3232421875"
+      gui-y: "378.9953918457031"
+  sample-app:
+    charm: cs:precise/rails-1
+    num_units: 1
+    options:
+      repo: https://github.com/pavelpachkovskij/sample-rails
+    annotations:
+      gui-x: "1915.5"
+      gui-y: "-0.5"
+series: precise
+machines:
+  0:
+    constraints: "mem=4G arch=amd64 cpu-cores=2"
+relations:
+- - postgresql:db
+  - sample-app:postgresql
+- - haproxy:reverseproxy
+  - sample-app:proxy
+- - kibana:rest
+  - logstash-indexer:rest
+- - logstash-agent:input
+  - logstash-indexer:input
+- - logstash-agent:juju-info
+  - sample-app:juju-info
+- - sample-app:nagios
+  - nagios:monitors
+- - nrpe:monitors
+  - nagios:monitors
+- - sample-app:nrpe
+  - nrpe:local-monitors
+- - memcached:cache
+  - sample-app:memcached
+- - redis-master:redis-master
+  - sample-app:redis
